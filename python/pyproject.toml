@@ -47,6 +47,10 @@ dev = [
     "jupyterlab>=4.0",
     "pytest>=8.0",
     "ruff>=0.16",
+    # Local enforcement of ../.pre-commit-config.yaml. The hook lives in
+    # .git/hooks/, which no clone inherits, so it needs a one-time
+    # `pre-commit install` per checkout; CI runs the same config.
+    "pre-commit>=4.0",
 ]
 
 [tool.ruff]

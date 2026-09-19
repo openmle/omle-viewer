@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 
 # ── helpers ────────────────────────────────────────────────────────────────────
 
@@ -29,9 +26,10 @@ class TestCliArgs:
         """No arguments → argparse usage error, exit code 2."""
         with patch("sys.argv", ["omle-viewer"]):
             with pytest.raises(SystemExit) as exc_info:
-                from omle_viewer import cli
                 # Re-import to avoid cached state
                 import importlib
+
+                from omle_viewer import cli
                 importlib.reload(cli)
                 cli.main()
         assert exc_info.value.code != 0
