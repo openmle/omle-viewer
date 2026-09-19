@@ -1,0 +1,264 @@
+name: Publish
+
+# Publishes omle-viewer to PyPI.
+#
+# Two ways to run:
+#   1. Push a version tag  →  builds, verifies, publishes to PyPI.
+#        git tag v0.1.0 && git push origin v0.1.0
+#   2. Run manually        →  builds, verifies, publishes to TestPyPI
+#        (Actions → Publish → Run workflow)
+#
+# This repo is a monorepo: the Vite/React viewer lives at the root and the
+# Python package in python/. The viewer bundle (python/src/omle_viewer/
+# static/viewer.html) is gitignored and therefore absent from a fresh checkout,
+# so the frontend MUST be built before the wheel. A wheel built without it
+# installs cleanly and silently degrades to a "viewer not built" placeholder —
+# the "Verify the wheel bundles the viewer" step below exists to catch that.
+#
+# ORDERING: this package depends on `omle`, so the verify job cannot install
+# the built wheel until omle itself is on PyPI. Publish omle first.
+#
+# Authentication uses PyPI Trusted Publishing (OIDC) — no API tokens or
+# secrets. Before the first run, register this workflow as a trusted publisher:
+#   PyPI:     https://pypi.org/manage/account/publishing/
+#   TestPyPI: https://test.pypi.org/manage/account/publishing/
+# with owner "openmle", repository "omle-viewer", workflow "publish.yml",
+# and environment "pypi" / "testpypi" respectively.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          # setuptools-scm derives the version from git tags — a shallow
+          # checkout yields a dev version with a local segment.
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Type-check and build the self-contained viewer
+        run: npm run build:singlefile
+
+      - name: Copy the viewer bundle into the Python package
+        run: |
+          mkdir -p python/src/omle_viewer/static
+          cp dist-singlefile/index.html python/src/omle_viewer/static/viewer.html
+          ls -lh python/src/omle_viewer/static/
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.12"
+
+      - name: Install build tooling
+        run: pip install build twine
+
+      - name: Build sdist and wheel
+        working-directory: python
+        run: |
+          rm -rf build dist
+          python -m build
+
+      - name: Check metadata
+        working-directory: python
+        run: twine check dist/*
+
+      - name: Reject versions PyPI will not accept
+        working-directory: python
+        run: |
+          python - <<'PY'
+          import glob
+          import os
+          import sys
+
+          wheels = glob.glob("dist/*.whl")
+          if len(wheels) != 1:
+              sys.exit(f"::error::Expected exactly one wheel in dist/, found {wheels}")
+
+          # Wheel filenames are {name}-{version}-{python}-{abi}-{platform}.whl;
+          # parse the basename so a '-' in the workspace path cannot shift fields.
+          version = os.path.basename(wheels[0]).split("-")[1]
+          print(f"Built version: {version}")
+
+          if "+" in version:
+              print(
+                  f"::error::Version '{version}' carries a local segment, which PyPI "
+                  "rejects. Publish from a checkout of a version tag (e.g. git tag v0.1.0)."
+              )
+              sys.exit(1)
+          PY
+
+      - name: Verify the wheel bundles the viewer
+        working-directory: python
+        run: |
+          python - <<'PY'
+          import glob
+          import sys
+          import zipfile
+
+          asset = "omle_viewer/static/viewer.html"
+          wheel = glob.glob("dist/*.whl")[0]
+
+          with zipfile.ZipFile(wheel) as zf:
+              names = zf.namelist()
+              if asset not in names:
+                  sys.exit(
+                      f"::error::{asset} is missing from the wheel — the frontend build "
+                      "did not run. Publishing this would ship a viewer that renders a "
+                      "'not built' placeholder."
+                  )
+              size = zf.getinfo(asset).file_size
+
+          print(f"{asset}: {size} bytes")
+          # The real bundle inlines React and protobufjs, so it is hundreds of KB.
+          # Anything tiny means the single-file inlining silently did not happen.
+          if size < 100_000:
+              sys.exit(f"::error::{asset} is only {size} bytes — assets were not inlined.")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: python/dist/
+
+  verify:
+    name: Verify install (${{ matrix.python-version }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install the wheel
+        # Pulls omle from PyPI — see the ORDERING note at the top of this file.
+        run: pip install dist/*.whl
+
+      - name: Smoke-test the installed package
+        # Run from a scratch directory so no checkout can satisfy imports.
+        run: |
+          mkdir -p /tmp/smoke && cd /tmp/smoke
+          python - <<'PY'
+          import omle
+          import omle_viewer
+          from omle_viewer import display
+
+          print("version:", omle_viewer.__version__)
+
+          assert display._VIEWER_HTML.exists(), (
+              f"viewer bundle missing from the installed package at {display._VIEWER_HTML}"
+          )
+
+          model = omle.OMLEModel(metadata=omle.ModelMetadata(name="smoke"))
+          html = display._build_viewer_html(model)
+          assert html is not None, "viewer HTML did not render"
+          assert "__OMLE_MODEL__" in html, "the model was not injected into the viewer"
+          print(f"viewer rendered: {len(html)} chars")
+          PY
+          omle-viewer --help > /dev/null && echo "CLI ok"
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    if: github.event_name == 'workflow_dispatch'
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/omle-viewer
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+
+  publish-pypi:
+    name: Publish to PyPI
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/omle-viewer
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: Create the GitHub release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: publish-pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # No build artifacts are attached. PyPI is the distribution channel
+          # for this package and already serves the wheel and sdist, with
+          # checksums, for every version; duplicating them here would only add
+          # a second copy to keep in sync. GitHub still serves the auto-
+          # generated source archives for the tag. This job exists so that a
+          # tag pushed from the command line still gets a release with notes.
+          #
+          # The release may already exist: creating one through the GitHub web
+          # UI creates the tag as well, and that tag push is what triggers this
+          # workflow, so `gh release create` would fail with "a release with the
+          # same tag name already exists".
+          if gh release view "${GITHUB_REF_NAME}" \
+               --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${GITHUB_REF_NAME} already exists; nothing to do."
+            exit 0
+          fi
+
+          # PEP 440 pre-release tags (v1.2.3rc1, a1, b1) must not be published
+          # as the latest stable release.
+          prerelease=""
+          if printf '%s' "${GITHUB_REF_NAME}" | grep -qE '(a|b|rc)[0-9]+$'; then
+            prerelease="--prerelease"
+          fi
+
+          gh release create "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes ${prerelease}

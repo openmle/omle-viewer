@@ -1,0 +1,228 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Dark theme tokens (default) ─────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --t-canvas:  #080810;
+  --t-bg:      #0d0d14;
+  --t-surface: #0e0e1c;
+  --t-surface2:#111128;
+  --t-hover:   #0f0f1e;
+  --t-active:  #1e1e2e;
+  --t-input:   #0a0a14;
+  --t-chip:    #101020;
+
+  /* Borders */
+  --t-line:   #14141e;
+  --t-border: #1a1a22;
+  --t-frame:  #1e1e2e;
+  --t-trim:   #252540;
+
+  /* Text */
+  --t-text:  #e0e4f8;
+  --t-text2: #a8b4d8;
+  --t-text3: #7080b8;
+  --t-text4: #505898;
+  --t-muted: #3c4878;
+  --t-faint: #2a3058;
+
+  /* Accent */
+  --t-accent:    #8090e8;
+  --t-accent2:   #b0bcff;
+  --t-accent-bg: #0a0d1a;
+
+  /* Status */
+  --t-ok:      #38e090;
+  --t-err:     #f05878;
+  --t-warn:    #f0b840;
+  --t-ok-bg:   #0a1810;
+  --t-err-bg:  #3a1010;
+  --t-warn-bg: #1a1408;
+
+  /* Node cards */
+  --t-node:         #0e0e1c;
+  --t-node-comp:    #181828;
+  --t-node-in:      #0a1020;
+  --t-node-out:     #120a20;
+  --t-node-hdr:     #111128;
+  --t-node-hdr-in:  #0d1930;
+  --t-node-hdr-out: #1a0d30;
+  --t-node-text:    #d8dcf8;
+  --t-node-dim:     #5868a0;
+  --t-node-lbl-in:  #60a8f8;
+  --t-node-lbl-out: #c080f0;
+  --t-node-lbl:     #a8b4ff;
+  --t-node-port:    #252545;
+  --t-node-port-h:  #4050a0;
+  --t-node-badge:   #1a1a30;
+  --t-node-badge-b: #252540;
+  --t-node-err:     #3a1010;
+  --t-node-err-b:   #5a2020;
+  --t-node-warn:    #2a2010;
+  --t-node-warn-b:  #4a3a10;
+  --t-node-shadow:  rgba(0,0,0,0.6);
+  --t-node-path:    #0d1228;
+  --t-node-path-b:  #7090e0;
+  --t-node-path-top:#5070c0;
+  --t-node-sel:     #7888e8;
+  --t-node-hov:     #484878;
+
+  /* Edges */
+  --t-edge:      #7878c8;
+  --t-edge-sel:  #8898e8;
+  --t-edge-hov:  #9ab0f0;
+  --t-edge-dim:  #1e1e32;
+  --t-edge-in:   #5088e8;
+  --t-edge-out:  #40b878;
+  --t-edge-done: #2a4030;
+
+  /* Mini-map */
+  --t-map-bg:     #08080f;
+  --t-map-node:   #141420;
+  --t-map-in:     #1a2840;
+  --t-map-out:    #281a40;
+  --t-map-comp:   #181828;
+  --t-map-node-b: #202035;
+  --t-map-in-b:   #1e3a60;
+  --t-map-out-b:  #3e1e60;
+  --t-map-vp:     rgba(80,90,180,0.08);
+  --t-map-vp-b:   rgba(80,90,200,0.5);
+
+  /* Tree viewer */
+  --t-tree-leaf:    #38d880;
+  --t-tree-node:    #a8b4f8;
+  --t-tree-leaf-bg: #0a1810;
+  --t-tree-node-bg: #0e0e1c;
+  --t-tree-edge:    #1e1e30;
+  --t-tree-edge-p:  #5070c0;
+}
+
+/* ── Light theme overrides ────────────────────────────────────────────────── */
+[data-theme="light"] {
+  --t-canvas:  #f0f0f8;
+  --t-bg:      #f5f5fc;
+  --t-surface: #ffffff;
+  --t-surface2:#f0f0fc;
+  --t-hover:   #eaeaf4;
+  --t-active:  #e4e8f8;
+  --t-input:   #ffffff;
+  --t-chip:    #ededf8;
+
+  --t-line:   #e5e5f0;
+  --t-border: #d0d0e2;
+  --t-frame:  #c8c8dc;
+  --t-trim:   #a0a0cc;
+
+  --t-text:  #1a1a3a;
+  --t-text2: #3a3a6a;
+  --t-text3: #5050a0;
+  --t-text4: #8888b0;
+  --t-muted: #a0a0c0;
+  --t-faint: #c0c0d8;
+
+  --t-accent:    #4050c0;
+  --t-accent2:   #3040b0;
+  --t-accent-bg: #e8eaf8;
+
+  --t-ok:      #208050;
+  --t-err:     #a02040;
+  --t-warn:    #906020;
+  --t-ok-bg:   #e8f5ee;
+  --t-err-bg:  #fce8ec;
+  --t-warn-bg: #fce8d8;
+
+  --t-node:         #ffffff;
+  --t-node-comp:    #f0f0fc;
+  --t-node-in:      #eaf0fc;
+  --t-node-out:     #f5eafc;
+  --t-node-hdr:     #f5f5ff;
+  --t-node-hdr-in:  #e8f0fc;
+  --t-node-hdr-out: #f5eafc;
+  --t-node-text:    #2a2a6a;
+  --t-node-dim:     #9090b8;
+  --t-node-lbl-in:  #2060a0;
+  --t-node-lbl-out: #7030a0;
+  --t-node-lbl:     #4040a0;
+  --t-node-port:    #c0c0dc;
+  --t-node-port-h:  #4050a0;
+  --t-node-badge:   #ededf8;
+  --t-node-badge-b: #c8c8e0;
+  --t-node-err:     #fce8ec;
+  --t-node-err-b:   #e0b0b8;
+  --t-node-warn:    #fce8d8;
+  --t-node-warn-b:  #e0c090;
+  --t-node-shadow:  rgba(20,20,60,0.1);
+  --t-node-path:    #e8ecf8;
+  --t-node-path-b:  #5070c0;
+  --t-node-path-top:#4060b0;
+  --t-node-sel:     #4858b0;
+  --t-node-hov:     #c0c0d8;
+
+  --t-edge:      #9090c0;
+  --t-edge-sel:  #4050c0;
+  --t-edge-hov:  #8090d0;
+  --t-edge-dim:  #d8d8f0;
+  --t-edge-in:   #3050c0;
+  --t-edge-out:  #308050;
+  --t-edge-done: #c0d0c8;
+
+  --t-map-bg:     #f0f0f8;
+  --t-map-node:   #e0e0f0;
+  --t-map-in:     #d0e0f8;
+  --t-map-out:    #e8d8f8;
+  --t-map-comp:   #e0e0f4;
+  --t-map-node-b: #d0d0e8;
+  --t-map-in-b:   #b0c8e8;
+  --t-map-out-b:  #c8b0e8;
+  --t-map-vp:     rgba(60,80,200,0.08);
+  --t-map-vp-b:   rgba(60,80,200,0.4);
+
+  --t-tree-leaf:    #208050;
+  --t-tree-node:    #4040a0;
+  --t-tree-leaf-bg: #e8f5ee;
+  --t-tree-node-bg: #ffffff;
+  --t-tree-edge:    #c8c8e0;
+  --t-tree-edge-p:  #4060b0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--t-bg);
+  color: var(--t-text);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--t-trim);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--t-text4);
+}
+
+button {
+  font-family: inherit;
+}
+
+textarea, input {
+  font-family: inherit;
+}
+
+a {
+  color: inherit;
+}
