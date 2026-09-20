@@ -151,18 +151,3 @@ class TestCliSuccess:
         assert code == 1
         captured = capsys.readouterr()
         assert "bad model format" in captured.err
-
-    def test_proto_import_error_exits_1(self, tmp_path, capsys):
-        """ImportError while loading a proto file → exit code 1."""
-        proto_file = tmp_path / "model.omle"
-        proto_file.write_bytes(b"bytes")
-
-        mock_omle = MagicMock()
-        mock_omle.load.side_effect = ImportError("No module named 'omle.proto'")
-
-        with patch.dict("sys.modules", {"omle": mock_omle}):
-            code = _run_main([str(proto_file)])
-
-        assert code == 1
-        captured = capsys.readouterr()
-        assert "proto" in captured.err.lower() or "omle[proto]" in captured.err

@@ -82,7 +82,6 @@ out
 .nuxt
 dist
 dist-singlefile
-dist-widget
 
 # Gatsby files
 .cache/

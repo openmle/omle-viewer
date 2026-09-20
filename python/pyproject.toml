@@ -40,9 +40,6 @@ Issues = "https://github.com/openmle/omle-viewer/issues"
 "OMLE format" = "https://github.com/openmle/omle"
 
 [project.optional-dependencies]
-proto = [
-    "omle[proto]",
-]
 dev = [
     "jupyterlab>=4.0",
     "pytest>=8.0",

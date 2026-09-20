@@ -7,7 +7,6 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "build:widget": "tsc --noEmit && vite build --config vite.widget.config.ts",
     "build:singlefile": "tsc --noEmit && vite build --config vite.singlefile.config.ts",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
@@ -16,7 +15,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@openmle/omle.js": "^0.1.0-rc5",
+    "@openmle/omle.js": "^0.1.0-rc6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
