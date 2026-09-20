@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useReducer, useCallback, useRef, useEffect } from 'react';
-import { fromJSON, validate, Engine, validateInputs } from '@openmle/omle.js';
-import { loadProtoBinary } from './proto-loader.ts';
+import { fromJSON, fromProtoBinary, validate, Engine, validateInputs } from '@openmle/omle.js';
 import type { AppState, Action, LogEntry } from './state.ts';
 import { reducer, initialState } from './state.ts';
 import { Sidebar } from './components/Sidebar.tsx';
@@ -61,7 +60,7 @@ export default function App({ initialModelJson, widgetMode = false }: {
       let model;
       if (isProto) {
         const buf = await file.arrayBuffer();
-        model = loadProtoBinary(buf);
+        model = fromProtoBinary(buf);
       } else {
         const text = await file.text();
         model = fromJSON(text);

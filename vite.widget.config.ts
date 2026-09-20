@@ -10,11 +10,6 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(version),
   },
   plugins: [react()],
-  server: {
-    fs: {
-      allow: [resolve(__dirname, '..')],
-    },
-  },
   build: {
     lib: {
       entry: resolve(__dirname, 'src/widget.tsx'),
