@@ -1,4 +1,7 @@
-# omle-viewer
+# OMLE Viewer
+
+[![PyPI](https://img.shields.io/pypi/v/omle-viewer.svg)](https://pypi.org/project/omle-viewer/)
+[![Tests](https://github.com/openmle/omle-viewer/actions/workflows/test.yml/badge.svg)](https://github.com/openmle/omle-viewer/actions/workflows/test.yml)
 
 Fully client-side model inspection and debugging tool for [OMLE](https://github.com/openmle) models. Built on React 18, Vite, and [omle.js](https://github.com/openmle/omle.js).
 
