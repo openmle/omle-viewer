@@ -65,6 +65,7 @@ src/                    the React app
     views/              inspector tabs
     shared/             icons and primitives
   state.ts              reducer and actions
+version.ts              __APP_VERSION__, derived from the git tag
 vite.singlefile.config.ts   the config that produces the shipped bundle
 build.sh                build + copy into the Python package
 python/

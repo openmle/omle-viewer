@@ -20,7 +20,7 @@ def main() -> None:
     parser.add_argument(
         "model",
         metavar="MODEL_FILE",
-        help="Path to the model file (.json, .omle, .pb)",
+        help="Path to the model file (.json, .omle, .pb, .bin)",
     )
     args = parser.parse_args()
 
@@ -39,25 +39,13 @@ def main() -> None:
         )
         sys.exit(1)
 
-    ext = path.suffix.lower()
-    proto_exts = {".omle", ".pb", ".bin"}
-
-    if ext in proto_exts:
-        try:
-            model = omle.load(path)
-        except ImportError:
-            print(
-                f"omle-viewer: loading {ext!r} files requires the protobuf extra.\n"
-                "Install it with: pip install 'omle[proto]' 'omle-viewer[proto]'",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-    else:
-        try:
-            model = omle.load(path)
-        except ValueError as e:
-            print(f"omle-viewer: {e}", file=sys.stderr)
-            sys.exit(1)
+    # omle.load dispatches on the extension and decodes both encodings; omle
+    # depends on protobuf directly, so binary files need no optional extra.
+    try:
+        model = omle.load(path)
+    except ValueError as e:
+        print(f"omle-viewer: {e}", file=sys.stderr)
+        sys.exit(1)
 
     from .display import show_in_browser
     show_in_browser(model)

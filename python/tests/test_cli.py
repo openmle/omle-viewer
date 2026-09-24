@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 
 # ── helpers ────────────────────────────────────────────────────────────────────
 
@@ -29,9 +26,10 @@ class TestCliArgs:
         """No arguments → argparse usage error, exit code 2."""
         with patch("sys.argv", ["omle-viewer"]):
             with pytest.raises(SystemExit) as exc_info:
-                from omle_viewer import cli
                 # Re-import to avoid cached state
                 import importlib
+
+                from omle_viewer import cli
                 importlib.reload(cli)
                 cli.main()
         assert exc_info.value.code != 0
@@ -153,18 +151,3 @@ class TestCliSuccess:
         assert code == 1
         captured = capsys.readouterr()
         assert "bad model format" in captured.err
-
-    def test_proto_import_error_exits_1(self, tmp_path, capsys):
-        """ImportError while loading a proto file → exit code 1."""
-        proto_file = tmp_path / "model.omle"
-        proto_file.write_bytes(b"bytes")
-
-        mock_omle = MagicMock()
-        mock_omle.load.side_effect = ImportError("No module named 'omle.proto'")
-
-        with patch.dict("sys.modules", {"omle": mock_omle}):
-            code = _run_main([str(proto_file)])
-
-        assert code == 1
-        captured = capsys.readouterr()
-        assert "proto" in captured.err.lower() or "omle[proto]" in captured.err

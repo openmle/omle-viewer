@@ -7,6 +7,41 @@ on:
     branches: ["**"]
 
 jobs:
+  # Runs .pre-commit-config.yaml, the same file the local git hook runs, so the
+  # two cannot drift. --all-files because a locally installed hook only ever
+  # sees staged files, and nothing guarantees a contributor installed it at all.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      # The config's local eslint and tsc hooks run with `language: system` and
+      # shell out to npx, so this repo's own node_modules must exist. Nothing
+      # in the config imports the Python package, so it is not installed here.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+
+      - uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.12"
+
+      - name: Cache pre-commit environments
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      # Installed directly rather than via python/[dev], which would pull in
+      # JupyterLab for no benefit to a lint job.
+      - run: pip install pre-commit
+
+      # --show-diff-on-failure prints the patch the autofixing hooks would have
+      # applied, so a red build hands back the fix instead of just a rule name.
+      - run: pre-commit run --all-files --show-diff-on-failure
+
   frontend:
     runs-on: ubuntu-latest
     steps:

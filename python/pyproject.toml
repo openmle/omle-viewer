@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "omle-viewer"
 dynamic = ["version"]
-description = "Interactive DAG viewer for OMLE models — Jupyter display and browser CLI"
+description = "Interactive DAG viewer for OMLE models in Jupyter and the browser"
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
@@ -40,13 +40,14 @@ Issues = "https://github.com/openmle/omle-viewer/issues"
 "OMLE format" = "https://github.com/openmle/omle"
 
 [project.optional-dependencies]
-proto = [
-    "omle[proto]",
-]
 dev = [
     "jupyterlab>=4.0",
     "pytest>=8.0",
     "ruff>=0.16",
+    # Local enforcement of ../.pre-commit-config.yaml. The hook lives in
+    # .git/hooks/, which no clone inherits, so it needs a one-time
+    # `pre-commit install` per checkout; CI runs the same config.
+    "pre-commit>=4.0",
 ]
 
 [tool.ruff]

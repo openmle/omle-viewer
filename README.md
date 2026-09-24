@@ -1,8 +1,56 @@
-# omle-viewer
+# OMLE Viewer
 
-Fully client-side model inspection and debugging tool for [OMLE](https://github.com/openmle) models. Built on React 18, Vite, and [omle.js](../omle.js).
+[![PyPI](https://img.shields.io/pypi/v/omle-viewer.svg)](https://pypi.org/project/omle-viewer/)
+[![Tests](https://github.com/openmle/omle-viewer/actions/workflows/test.yml/badge.svg)](https://github.com/openmle/omle-viewer/actions/workflows/test.yml)
 
-No server required — drop a `.json`, `.omle`, or `.omle` model file into the browser and explore.
+Fully client-side model inspection and debugging tool for [OMLE](https://github.com/openmle) models. Built on React 18, Vite, and [omle.js](https://github.com/openmle/omle.js).
+
+No server required — drop a `.json` or `.omle` model file into the browser and explore.
+
+## Installation
+
+```bash
+pip install omle-viewer
+```
+
+### Command line
+
+```bash
+omle-viewer model.json
+omle-viewer model.omle
+```
+
+Opens the model in your default browser. Accepts `.json`, and `.omle` / `.pb` /
+`.bin` for the protobuf binary encoding — both work out of the box, since
+`omle` depends on `protobuf` directly. The viewer is written to a temporary
+self-contained HTML file and opened with `webbrowser.open()` — nothing is
+uploaded and no server runs.
+
+### In a notebook
+
+Importing the package registers a display hook, so models render inline when
+returned from a cell:
+
+```python
+import omle
+import omle_viewer
+
+model = omle.load("model.omle")
+model                        # renders the interactive DAG inline
+```
+
+Use `show()` for a non-default height, or for a handle you can update in place:
+
+```python
+from omle_viewer import show, show_in_browser
+
+w = show(model, height=700)
+w.update(updated_model)      # replaces the output without a new cell
+show_in_browser(model)       # or open it in the browser instead
+```
+
+Works in JupyterLab, Jupyter Notebook, VS Code notebooks, and Google Colab with
+no widget extensions required.
 
 ## Features
 
@@ -51,7 +99,7 @@ Context-sensitive panel for the currently selected item:
 - **Validation** — full list of errors and warnings with paths
 - **Inference** — JSON input editor, Run button, formatted output display
 
-## Getting started
+## Developing the viewer
 
 ```bash
 npm install
@@ -69,7 +117,7 @@ npm run preview   # serve the production build locally
 
 ## Usage
 
-1. **Load a model** — drag-and-drop a `.json`, `.omle`, or `.omle` file onto the empty canvas, or use the file input.
+1. **Load a model** — drag-and-drop a `.json` or `.omle` file onto the empty canvas, or use the file input.
 2. **Explore the graph** — pan with drag, zoom with scroll. Click a node to inspect it in the right panel.
 3. **Trace lineage** — click a node; its upstream and downstream subgraph highlights automatically.
 4. **Enter a composite** — click ⊕ on a composite node to drill into its nested graph. Use the breadcrumb to navigate back.
@@ -93,44 +141,13 @@ The inference panel accepts any of:
 { "X": { "dtype": "FLOAT64", "shape": [1, 3], "data": [1.5, -0.3, 0.8] } }
 ```
 
-## Project structure
-
-```
-src/
-  App.tsx                   — root layout, AppContext, loadFile, runInference
-  state.ts                  — AppState, Action, reducer
-  proto-loader.ts           — decodes .omle binary files via protobufjs
-  components/
-    Sidebar.tsx             — left nav tree
-    CenterPanel.tsx         — graph canvas host, drop target
-    Inspector.tsx           — right detail panel
-    BottomPanel.tsx         — logs / validation / inference tabs
-    graph/
-      GraphCanvas.tsx       — pan/zoom SVG, playback orchestration
-      NodeCard.tsx          — SVG node card renderer
-      EdgePath.tsx          — SVG cubic-bezier edge with tooltip
-      MiniMap.tsx           — mini-map overlay
-      ScopeView.tsx         — namespace scope debugger panel
-      StepOverlay.tsx       — per-step input/output value card
-      layout.ts             — graph data types, Sugiyama layout, lineage
-    views/
-      OverviewView.tsx      — model metadata summary
-      NodeView.tsx          — node detail
-      TensorView.tsx        — tensor data display
-      InputOutputView.tsx   — input / output spec
-      FeatureView.tsx       — schema feature detail
-      FunctionView.tsx      — user-defined function
-      VerificationView.tsx  — verification cases
-```
-
 ## Dependencies
 
 | Package | Role |
 |---|---|
 | `react` + `react-dom` | UI framework |
 | `vite` + `@vitejs/plugin-react` | Build tool and dev server |
-| `omle.js` | Model IR, validation, engine (consumed from source via path alias) |
-| `protobufjs` | Decodes `.omle` binary protobuf files |
+| `@openmle/omle.js` | Model IR, validation, engine, and `.omle` binary decoding |
 
 All rendering is pure SVG — no graph-layout or diagramming libraries.
 

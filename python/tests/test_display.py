@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import html
 import json
-from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+import pytest
 
 # ── helpers ────────────────────────────────────────────────────────────────────
 
@@ -230,11 +228,11 @@ class TestShowInBrowser:
         from omle_viewer import display as disp
 
         with patch.object(disp, "_VIEWER_HTML", tmp_path / "viewer.html"):
-            try:
+            with pytest.raises(RuntimeError) as excinfo:
                 disp.show_in_browser(_make_model())
-                assert False, "Expected RuntimeError"
-            except RuntimeError as e:
-                assert "not built" in str(e).lower() or "build.sh" in str(e)
+
+        message = str(excinfo.value)
+        assert "not built" in message.lower() or "build.sh" in message
 
     def test_opens_browser_when_viewer_exists(self, tmp_path):
         """webbrowser.open is called with a file:// URL."""
