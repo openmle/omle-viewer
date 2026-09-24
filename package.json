@@ -15,7 +15,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@openmle/omle.js": "^0.1.0-rc6",
+    "@openmle/omle.js": "^0.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

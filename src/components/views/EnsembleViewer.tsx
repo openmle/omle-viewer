@@ -3,7 +3,7 @@
 
 import React from 'react';
 import type { TreeEnsemble, Tree } from '@openmle/omle.js';
-import { scalarToNumber, tensorToData } from '@openmle/omle.js';
+import { tensorToData } from '@openmle/omle.js';
 import { useApp } from '../../App.tsx';
 import { tvTensor } from '../shared/tensorValue.ts';
 
@@ -38,14 +38,23 @@ export function EnsembleViewer({ nodeName, ensemble, featureNames = [], inputLab
     });
   };
 
-  const baseScore = ensemble.base_score != null ? scalarToNumber(ensemble.base_score) : null;
+  // base_scores is a TensorValue with one entry per output column, not a
+  // Scalar. It was read as `base_score`, a field omle.proto does not carry, so
+  // the row silently never rendered.
+  const baseScoresT = tvTensor(ensemble.base_scores, state.model);
+  const baseScores = baseScoresT
+    ? Array.from(tensorToData(baseScoresT).data as ArrayLike<number>).map(Number)
+    : null;
+  const baseScoreLabel = baseScores && baseScores.length > 0
+    ? baseScores.map(fmtNum).join(', ')
+    : null;
 
   const propsBar: [string, string][] = [
     ['Task',        ensemble.task_type   ?? '—'],
     ['Aggregation', ensemble.aggregation ?? '—'],
     ['Trees',       String(trees.length)],
     ['Features',    featureNames.length > 0 ? String(featureNames.length) : '—'],
-    ...(baseScore != null ? [['Base score', fmtNum(baseScore)] as [string, string]] : []),
+    ...(baseScoreLabel != null ? [['Base score', baseScoreLabel] as [string, string]] : []),
     ...(inputLabel ? [['Input', inputLabel] as [string, string]] : []),
   ];
 

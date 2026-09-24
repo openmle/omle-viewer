@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { scalarValue } from '@openmle/omle.js';
+import { scalarValue, tensorToData } from '@openmle/omle.js';
 import { useApp } from '../App.tsx';
+import { tvTensor } from './shared/tensorValue.ts';
 import type { Selection } from '../state.ts';
 import { NodeView } from './views/NodeView.tsx';
 import { InputOutputView } from './views/InputOutputView.tsx';
@@ -437,7 +438,14 @@ function TreeInfoPanel({ ensembleName, treeIndex, tree, ensemble }: {
   tree: Tree | null;
   ensemble: TreeEnsemble | null;
 }) {
+  const { state } = useApp();
   const [tab, setTab] = useState<'summary' | 'raw'>('summary');
+  // base_scores is a TensorValue with one entry per output column, not a
+  // Scalar — the old `base_score` read never matched anything on the wire.
+  const baseScoresT = tvTensor(ensemble?.base_scores, state.model);
+  const baseScores = baseScoresT
+    ? Array.from(tensorToData(baseScoresT).data as ArrayLike<number>).map(Number)
+    : null;
   const nodeCount = tree?.num_nodes ?? tree?.node_kind?.length ?? 0;
   const leafWidth = tree?.leaf_width ?? 1;
 
@@ -472,8 +480,8 @@ function TreeInfoPanel({ ensembleName, treeIndex, tree, ensemble }: {
               {ensemble.tree_group && ensemble.tree_group[treeIndex] !== undefined && (
                 <Row k="Class group" v={String(ensemble.tree_group[treeIndex])} />
               )}
-              {ensemble.base_score != null && (
-                <Row k="Base score" v={String(scalarValue(ensemble.base_score) ?? '—')} mono />
+              {baseScores && baseScores.length > 0 && (
+                <Row k="Base score" v={baseScores.join(', ')} mono />
               )}
             </Section>
           )}

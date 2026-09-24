@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "omle-viewer"
 dynamic = ["version"]
-description = "Interactive DAG viewer for OMLE models — Jupyter display and browser CLI"
+description = "Interactive DAG viewer for OMLE models in Jupyter and the browser"
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE"]

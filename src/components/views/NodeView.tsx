@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import type { Node, StepSnapshot, SerializedTensor, AnomalyDetection, Expression } from '@openmle/omle.js';
-import { scalarToNumber } from '@openmle/omle.js';
+import { scalarToNumber, tensorToData } from '@openmle/omle.js';
 import { useApp } from '../../App.tsx';
+import { tvTensor } from '../shared/tensorValue.ts';
 import { JsonView } from '../shared/JsonView.tsx';
 import { TreeEnsembleIconHtml, NeuralNetworkIconHtml } from '../shared/OMLEIcon.tsx';
 import { TreeEnsembleView } from '../graph/explain/TreeEnsembleView.tsx';
@@ -339,6 +340,12 @@ function TreeSummary({ tree }: { tree: import('@openmle/omle.js').Tree }) {
 }
 
 function EnsembleSummary({ ensemble }: { ensemble: import('@openmle/omle.js').TreeEnsemble }) {
+  const { state } = useApp();
+  // base_scores is a TensorValue (one entry per output column), not a Scalar.
+  const baseScoresT = tvTensor(ensemble.base_scores, state.model);
+  const baseScores = baseScoresT
+    ? Array.from(tensorToData(baseScoresT).data as ArrayLike<number>).map(Number)
+    : null;
   const totalNodes = ensemble.trees?.reduce((s, t) => s + (t.num_nodes ?? t.node_kind?.length ?? 0), 0) ?? 0;
   return (
     <SectionCard label="TreeEnsemble">
@@ -352,7 +359,7 @@ function EnsembleSummary({ ensemble }: { ensemble: import('@openmle/omle.js').Tr
         <span style={styles.propKey}>Aggregation</span>
         <span style={styles.propVal}>{ensemble.aggregation ?? 'SUM'}</span>
         <span style={styles.propKey}>Base score</span>
-        <span style={styles.propVal}>{ensemble.base_score != null ? scalarToNumber(ensemble.base_score) : '—'}</span>
+        <span style={styles.propVal}>{baseScores && baseScores.length > 0 ? baseScores.join(', ') : '—'}</span>
         <span style={styles.propKey}>Post-transform</span>
         <span style={styles.propVal}>{ensemble.post_transform ?? 'IDENTITY'}</span>
       </PropGrid>
