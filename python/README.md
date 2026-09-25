@@ -1,4 +1,7 @@
-# omle-viewer (Python)
+# OMLE Viewer
+
+[![PyPI](https://img.shields.io/pypi/v/omle-viewer.svg)](https://pypi.org/project/omle-viewer/)
+[![Tests](https://github.com/openmle/omle-viewer/actions/workflows/test.yml/badge.svg)](https://github.com/openmle/omle-viewer/actions/workflows/test.yml)
 
 Jupyter display integration and browser CLI for [OMLE](https://github.com/openmle/omle)
 models — renders the interactive DAG viewer inline in a notebook cell or opens

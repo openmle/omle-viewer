@@ -15,7 +15,7 @@ keywords = [
     "machine learning", "omle", "visualization", "dag", "jupyter", "viewer",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Framework :: Jupyter",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
