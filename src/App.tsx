@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useCallback, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useRef, useState, useEffect } from 'react';
 import { fromJSON, fromProtoBinary, validate, Engine, validateInputs } from '@openmle/omle.js';
 import type { AppState, Action, LogEntry } from './state.ts';
 import { reducer, initialState } from './state.ts';
@@ -6,6 +6,7 @@ import { Sidebar } from './components/Sidebar.tsx';
 import { CenterPanel } from './components/CenterPanel.tsx';
 import { Inspector } from './components/Inspector.tsx';
 import { BottomPanel } from './components/BottomPanel.tsx';
+import { useIsNarrow } from './useIsNarrow.ts';
 
 // ── Context ───────────────────────────────────────────────────────────────────
 
@@ -185,6 +186,67 @@ function Layout({ widgetMode = false }: { widgetMode?: boolean }) {
   const _inspectorDelta = 0;
   const _bottomDelta = 0;
 
+  // Below the breakpoint the two side panels stop being columns and become
+  // overlay drawers, closed by default, so the graph gets the whole width.
+  const isNarrow = useIsNarrow();
+  const [drawer, setDrawer] = useState<'sidebar' | 'inspector' | null>(null);
+
+  // Leaving a drawer open while the window grows back would leave a panel
+  // floating over the restored three-column layout.
+  useEffect(() => { if (!isNarrow) setDrawer(null); }, [isNarrow]);
+
+  if (isNarrow) {
+    return (
+      <div
+        className={widgetMode ? undefined : 'omle-root-mobile'}
+        style={{ ...styles.root, flexDirection: 'column', width: '100%',
+                 ...(widgetMode ? { height: '100%' } : null) }}
+      >
+        <div style={styles.mobileBar}>
+          <button
+            style={{ ...styles.mobileBtn, ...(drawer === 'sidebar' ? styles.mobileBtnOn : null) }}
+            onClick={() => setDrawer(d => (d === 'sidebar' ? null : 'sidebar'))}
+            aria-label="Toggle model outline"
+            aria-expanded={drawer === 'sidebar'}
+          >☰ Outline</button>
+          <button
+            style={{ ...styles.mobileBtn, ...(drawer === 'inspector' ? styles.mobileBtnOn : null) }}
+            onClick={() => setDrawer(d => (d === 'inspector' ? null : 'inspector'))}
+            aria-label="Toggle inspector"
+            aria-expanded={drawer === 'inspector'}
+          >Inspector ⓘ</button>
+        </div>
+
+        <div style={styles.centerColumn}>
+          <div style={styles.centerPanel}>
+            <CenterPanel />
+          </div>
+          {/* The drag handle is pointless on touch, so the bottom panel keeps a
+              fixed share of the viewport rather than a pixel height that was
+              chosen for a desktop window. */}
+          <div style={{ ...styles.bottomPanel, height: '38%' }}>
+            <BottomPanel />
+          </div>
+        </div>
+
+        {drawer && (
+          <>
+            <div style={styles.scrim} onClick={() => setDrawer(null)} />
+            <div
+              style={{
+                ...styles.drawer,
+                ...(drawer === 'sidebar' ? { left: 0, borderRight: '1px solid var(--t-border)' }
+                                         : { right: 0, borderLeft: '1px solid var(--t-border)' }),
+              }}
+            >
+              {drawer === 'sidebar' ? <Sidebar /> : <Inspector />}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div style={{ ...styles.root, height: widgetMode ? '100%' : '100vh', width: widgetMode ? '100%' : '100vw' }}>
       {/* Left sidebar */}
@@ -292,5 +354,52 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
     cursor: 'row-resize',
     background: 'transparent',
+  },
+
+  // ── Narrow-viewport layout ────────────────────────────────────────────────
+  mobileBar: {
+    flexShrink: 0,
+    display: 'flex',
+    gap: 6,
+    padding: '6px 8px',
+    borderBottom: '1px solid var(--t-border)',
+    background: 'var(--t-panel, var(--t-bg))',
+  },
+  mobileBtn: {
+    flex: 1,
+    // 36px keeps the tap target at a usable size on touch.
+    minHeight: 36,
+    background: 'var(--t-input)',
+    border: '1px solid var(--t-frame)',
+    borderRadius: 6,
+    color: 'var(--t-text2)',
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  mobileBtnOn: {
+    background: 'var(--t-accent-bg)',
+    borderColor: 'var(--t-accent)',
+    color: 'var(--t-accent2)',
+  },
+  scrim: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.45)',
+    zIndex: 40,
+  },
+  drawer: {
+    position: 'fixed',
+    top: 0,
+    bottom: 0,
+    // Never full-bleed: the strip of scrim left showing is what tells you the
+    // drawer is dismissible by tapping outside it.
+    width: 'min(86vw, 340px)',
+    zIndex: 41,
+    background: 'var(--t-bg)',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    boxShadow: '0 0 24px rgba(0,0,0,0.35)',
   },
 };

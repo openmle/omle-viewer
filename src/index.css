@@ -226,3 +226,12 @@ textarea, input {
 a {
   color: inherit;
 }
+
+/* Narrow-viewport root.
+   100dvh excludes the mobile browser's collapsing URL bar, which 100vh does
+   not — with vh alone the bottom panel sits under the chrome and is unreachable.
+   The vh line first so a browser without dvh support still gets a height. */
+.omle-root-mobile {
+  height: 100vh;
+  height: 100dvh;
+}
