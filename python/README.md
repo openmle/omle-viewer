@@ -10,6 +10,10 @@ it in the default browser.
 Works in **JupyterLab, Jupyter Notebook, VS Code notebooks, and Google Colab**
 with no widget extensions required.
 
+Want to look before installing? The released viewer is hosted at
+**[openmle.github.io/playground](https://openmle.github.io/playground/)** —
+drop a model in and it runs entirely in your browser.
+
 ## Installation
 
 ```bash

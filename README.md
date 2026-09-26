@@ -7,6 +7,18 @@ Fully client-side model inspection and debugging tool for [OMLE](https://github.
 
 No server required — drop a `.json` or `.omle` model file into the browser and explore.
 
+## Try it without installing
+
+**[Open the viewer &rarr;](https://openmle.github.io/playground/viewer.html)**
+
+The same build, hosted. Nothing is uploaded: the page is self-contained and
+[omle.js](https://github.com/openmle/omle.js) runs the model in your browser.
+The [playground page](https://openmle.github.io/playground/) wraps it with a
+short tour of what the viewer can do.
+
+Note it tracks the released version, so a feature merged since the last release
+will not be there yet — install from source for that.
+
 ## Installation
 
 ```bash
