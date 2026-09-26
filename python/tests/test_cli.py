@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 # ── helpers ────────────────────────────────────────────────────────────────────
 
 def _run_main(args: list[str]) -> int:
