@@ -22,17 +22,30 @@ def _run_main(args: list[str]) -> int:
 # ── argument parsing ───────────────────────────────────────────────────────────
 
 class TestCliArgs:
-    def test_no_args_exits_nonzero(self):
-        """No arguments → argparse usage error, exit code 2."""
-        with patch("sys.argv", ["omle-viewer"]):
-            with pytest.raises(SystemExit) as exc_info:
-                # Re-import to avoid cached state
-                import importlib
+    def test_no_args_opens_the_viewer_empty(self):
+        """No arguments → open the viewer on its drop target, exit 0.
 
-                from omle_viewer import cli
-                importlib.reload(cli)
-                cli.main()
-        assert exc_info.value.code != 0
+        The app renders a drop target when no model is injected, so there is no
+        reason to make the file mandatory just to get a window open.
+        """
+        with patch("omle_viewer.display.show_in_browser") as mock_show:
+            code = _run_main([])
+        assert code == 0
+        mock_show.assert_called_once_with()
+
+    def test_no_args_does_not_require_omle(self):
+        """With no model there is nothing to decode, so `omle` is not needed."""
+        def fake_import(name, *args, **kwargs):
+            if name == "omle":
+                raise ImportError("No module named 'omle'")
+            return original_import(name, *args, **kwargs)
+
+        original_import = __import__
+        with patch("omle_viewer.display.show_in_browser") as mock_show, \
+             patch("builtins.__import__", side_effect=fake_import):
+            code = _run_main([])
+        assert code == 0
+        mock_show.assert_called_once_with()
 
     def test_missing_file_exits_1(self, tmp_path):
         """Nonexistent file path → exit code 1."""
@@ -151,3 +164,43 @@ class TestCliSuccess:
         assert code == 1
         captured = capsys.readouterr()
         assert "bad model format" in captured.err
+
+
+# ── no-model viewer HTML ───────────────────────────────────────────────────────
+
+class TestEmptyViewerHtml:
+    """_build_viewer_html(None) serves the bundle without a model injected."""
+
+    def test_no_model_injects_nothing(self, tmp_path, monkeypatch):
+        from omle_viewer import display
+        html = "<html><head><title>v</title></head><body></body></html>"
+        stub = tmp_path / "viewer.html"
+        stub.write_text(html, encoding="utf-8")
+        monkeypatch.setattr(display, "_VIEWER_HTML", stub)
+
+        out = display._build_viewer_html(None)
+        assert out == html
+        # Check for the injected assignment, not the bare identifier: the real
+        # bundle contains __OMLE_MODEL__ in its own source (main.tsx reads it),
+        # so an identifier check would pass whether or not anything was
+        # injected.
+        assert "window.__OMLE_MODEL__ = " not in out
+
+    def test_with_model_injects_the_model(self, tmp_path, monkeypatch):
+        from unittest.mock import MagicMock
+
+        from omle_viewer import display
+        stub = tmp_path / "viewer.html"
+        stub.write_text("<html><head></head><body></body></html>", encoding="utf-8")
+        monkeypatch.setattr(display, "_VIEWER_HTML", stub)
+
+        model = MagicMock()
+        model.to_dict.return_value = {"inputs": [{"name": "x"}]}
+        out = display._build_viewer_html(model)
+        assert "window.__OMLE_MODEL__ = " in out
+        assert '"name": "x"' in out or '"name":"x"' in out
+
+    def test_unbuilt_bundle_returns_none_for_both(self, tmp_path, monkeypatch):
+        from omle_viewer import display
+        monkeypatch.setattr(display, "_VIEWER_HTML", tmp_path / "missing.html")
+        assert display._build_viewer_html(None) is None

@@ -18,9 +18,11 @@ pip install omle-viewer
 ```bash
 omle-viewer model.json
 omle-viewer model.omle
+omle-viewer               # no file — opens on the drop target
 ```
 
-Opens the model in your default browser. Accepts `.json`, and `.omle` / `.pb` /
+Opens the model in your default browser. The file is optional: with no argument
+the viewer opens empty, ready for a model to be dragged in or JSON pasted. Accepts `.json`, and `.omle` / `.pb` /
 `.bin` for the protobuf binary encoding — both work out of the box, since
 `omle` depends on `protobuf` directly. The viewer is written to a temporary
 self-contained HTML file and opened with `webbrowser.open()` — nothing is

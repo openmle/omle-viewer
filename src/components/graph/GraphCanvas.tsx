@@ -6,6 +6,7 @@ import {
   buildGraphData, computeLineage,
   type GNode,
 } from './layout.ts';
+import { resolveScopedSteps } from './scopedSteps.ts';
 import { NodeCard } from './NodeCard.tsx';
 import { EdgePath } from './EdgePath.tsx';
 import { MiniMap } from './MiniMap.tsx';
@@ -137,6 +138,18 @@ export function GraphCanvas() {
   const [isPlaying, setIsPlaying] = useState(false);
   const playIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Steps for the scope currently on screen — see resolveScopedSteps().
+  const scopedSteps = useMemo(
+    () => resolveScopedSteps(inferenceSteps, compositePath),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+    [inferenceSteps, compositeKey]);
+
+  // The step index is shared across scopes, so entering a shorter scope can
+  // leave it past the end. Clamp rather than blank the playback out.
+  const scopedIdx = scopedSteps
+    ? Math.min(inferenceStepIdx, scopedSteps.length - 1)
+    : -1;
+
   // Stop playback when steps are cleared
   useEffect(() => {
     if (!inferenceSteps) { setIsPlaying(false); }
@@ -148,23 +161,23 @@ export function GraphCanvas() {
 
   // Auto-advance
   useEffect(() => {
-    if (!isPlaying || !inferenceSteps) return;
+    if (!isPlaying || !scopedSteps) return;
     playIntervalRef.current = setInterval(() => {
       const next = stepIdxRef.current + 1;
-      if (next >= inferenceSteps.length) {
+      if (next >= scopedSteps.length) {
         setIsPlaying(false);
-        dispatch({ type: 'SET_INFERENCE_STEP_IDX', idx: inferenceSteps.length - 1 });
+        dispatch({ type: 'SET_INFERENCE_STEP_IDX', idx: scopedSteps.length - 1 });
       } else {
         dispatch({ type: 'SET_INFERENCE_STEP_IDX', idx: next });
       }
     }, 700);
     return () => { if (playIntervalRef.current) clearInterval(playIntervalRef.current); };
-  }, [isPlaying, inferenceSteps, dispatch]);
+  }, [isPlaying, scopedSteps, dispatch]);
 
   // Scroll the active node into rough center when step changes
   useEffect(() => {
-    if (inferenceStepIdx < 0 || !inferenceSteps || !containerRef.current) return;
-    const step = inferenceSteps[inferenceStepIdx];
+    if (scopedIdx < 0 || !scopedSteps || !containerRef.current) return;
+    const step = scopedSteps[scopedIdx];
     const node = displayNodes.get(step.nodeId);
     if (!node) return;
     const cw = containerRef.current.clientWidth;
@@ -184,15 +197,15 @@ export function GraphCanvas() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inferenceStepIdx]);
 
-  // Which nodes have been executed so far (steps 0..inferenceStepIdx)
+  // Which nodes in this scope have been executed so far (steps 0..scopedIdx)
   const executedNodeIds = useMemo<Set<string>>(() => {
-    if (!inferenceSteps || inferenceStepIdx < 0) return new Set();
+    if (!scopedSteps || scopedIdx < 0) return new Set();
     const s = new Set<string>();
-    for (let i = 0; i <= inferenceStepIdx; i++) s.add(inferenceSteps[i].nodeId);
+    for (let i = 0; i <= scopedIdx; i++) s.add(scopedSteps[i].nodeId);
     return s;
-  }, [inferenceSteps, inferenceStepIdx]);
+  }, [scopedSteps, scopedIdx]);
 
-  const activeStep = inferenceSteps && inferenceStepIdx >= 0 ? inferenceSteps[inferenceStepIdx] : null;
+  const activeStep = scopedSteps && scopedIdx >= 0 ? scopedSteps[scopedIdx] : null;
   const activeNodeId = activeStep?.nodeId ?? null;
 
   // Edges that carry data for the current step (inputs to active node + outputs from it)
@@ -512,23 +525,23 @@ export function GraphCanvas() {
         />
       )}
 
-      {/* Inference playback bar */}
-      {inferenceSteps && inferenceSteps.length > 0 && (
+      {/* Inference playback bar — scoped to the composite currently open */}
+      {scopedSteps && scopedSteps.length > 0 && (
         <PlaybackBar
-          steps={inferenceSteps}
-          stepIdx={inferenceStepIdx}
+          steps={scopedSteps}
+          stepIdx={scopedIdx}
           isPlaying={isPlaying}
           onPlay={() => {
-            if (inferenceStepIdx >= inferenceSteps.length - 1) {
+            if (scopedIdx >= scopedSteps.length - 1) {
               dispatch({ type: 'SET_INFERENCE_STEP_IDX', idx: 0 });
             }
             setIsPlaying(true);
           }}
           onPause={() => setIsPlaying(false)}
           onFirst={() => { setIsPlaying(false); dispatch({ type: 'SET_INFERENCE_STEP_IDX', idx: 0 }); }}
-          onLast={() => { setIsPlaying(false); dispatch({ type: 'SET_INFERENCE_STEP_IDX', idx: inferenceSteps.length - 1 }); }}
-          onPrev={() => { setIsPlaying(false); dispatch({ type: 'SET_INFERENCE_STEP_IDX', idx: Math.max(0, inferenceStepIdx - 1) }); }}
-          onNext={() => { setIsPlaying(false); dispatch({ type: 'SET_INFERENCE_STEP_IDX', idx: Math.min(inferenceSteps.length - 1, inferenceStepIdx + 1) }); }}
+          onLast={() => { setIsPlaying(false); dispatch({ type: 'SET_INFERENCE_STEP_IDX', idx: scopedSteps.length - 1 }); }}
+          onPrev={() => { setIsPlaying(false); dispatch({ type: 'SET_INFERENCE_STEP_IDX', idx: Math.max(0, scopedIdx - 1) }); }}
+          onNext={() => { setIsPlaying(false); dispatch({ type: 'SET_INFERENCE_STEP_IDX', idx: Math.min(scopedSteps.length - 1, scopedIdx + 1) }); }}
           onClose={() => { setIsPlaying(false); dispatch({ type: 'SET_INFERENCE_STEPS', steps: null }); }}
         />
       )}

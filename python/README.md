@@ -25,9 +25,12 @@ else to install and no optional extra to remember.
 ```bash
 omle-viewer model.json
 omle-viewer model.omle
+omle-viewer               # no file — opens on the drop target
 ```
 
 Accepts `.json`, and `.omle` / `.pb` / `.bin` for the protobuf binary encoding.
+The file is optional: with no argument the viewer opens empty, ready for a model
+to be dragged in or JSON pasted.
 Writes a temporary self-contained HTML file and opens it with
 `webbrowser.open()` — nothing is uploaded and no server runs.
 

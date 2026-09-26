@@ -35,11 +35,20 @@ pip install -e omle-viewer/python/
 """
 
 
-def _build_viewer_html(model: OMLEModel) -> str | None:
-    """Return the full self-contained viewer HTML with the model pre-loaded, or None if not built."""
+def _build_viewer_html(model: OMLEModel | None) -> str | None:
+    """Return the full self-contained viewer HTML, or None if the bundle is not built.
+
+    With *model* given it is injected as ``window.__OMLE_MODEL__`` and the
+    viewer opens on it. With *model* None nothing is injected and the viewer
+    opens on its drop target, ready for a file to be dragged in or JSON pasted
+    — the app already handles the model being absent, so there is no reason to
+    require one just to get a window open.
+    """
     if not _VIEWER_HTML.exists():
         return None
     viewer = _VIEWER_HTML.read_text(encoding="utf-8")
+    if model is None:
+        return viewer
     model_json = json.dumps(model.to_dict())
     inject = f"<script>window.__OMLE_MODEL__ = {model_json};</script>"
     return viewer.replace("</head>", inject + "</head>", 1)
@@ -65,8 +74,8 @@ def _build_iframe_html(model: OMLEModel, height: int) -> str:
     )
 
 
-def show_in_browser(model: OMLEModel) -> None:
-    """Open the interactive DAG viewer for *model* in the default web browser.
+def show_in_browser(model: OMLEModel | None = None) -> None:
+    """Open the interactive DAG viewer in the default web browser.
 
     Writes a temporary self-contained HTML file and opens it via
     ``webbrowser.open()``. Works from a script, a terminal, or a notebook.
@@ -74,7 +83,8 @@ def show_in_browser(model: OMLEModel) -> None:
     Parameters
     ----------
     model:
-        The OMLEModel instance to visualize.
+        The OMLEModel instance to visualize, or None to open the viewer empty
+        on its drop target.
     """
     import tempfile
     import webbrowser
