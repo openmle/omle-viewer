@@ -1,0 +1,41 @@
+# Optional but recommended:
+#   pip install pre-commit && pre-commit install
+#
+# This repo holds both the Vite/React viewer (root) and the Python package
+# (python/), so both linters run. ESLint uses the repo's own install (npm ci).
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^python/src/omle_viewer/static/
+      - id: end-of-file-fixer
+        exclude: ^python/src/omle_viewer/static/
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-json
+      - id: check-yaml
+      - id: check-toml
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.7
+    hooks:
+      - id: ruff-check
+        args: [--fix, --config, python/pyproject.toml]
+        files: ^python/
+
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint
+        entry: npx eslint
+        language: system
+        types_or: [ts, tsx, javascript]
+        pass_filenames: false
+      - id: tsc
+        name: tsc --noEmit
+        entry: npx tsc --noEmit
+        language: system
+        types_or: [ts, tsx]
+        pass_filenames: false
